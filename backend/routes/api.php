@@ -9,6 +9,14 @@ use App\Http\Controllers\Api\RatingController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReportController;
 
+// Handle OPTIONS preflight
+Route::options('{any}', function() {
+    return response('', 204)
+        ->header('Access-Control-Allow-Origin', '*')
+        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, X-Requested-With');
+})->where('any', '.*');
+
 // Rutas públicas
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -43,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/passenger/my-trips', [TripPassengerController::class, 'myTrips']);
     });
 
-    // Calificaciones (todos los autenticados)
+    // Calificaciones
     Route::post('/trips/{id}/rate',     [RatingController::class, 'store']);
     Route::get('/users/{id}/ratings',   [RatingController::class, 'userRatings']);
 
