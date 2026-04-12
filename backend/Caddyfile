@@ -5,9 +5,9 @@
 
 :{$PORT} {
     root * /app/public
-    
+
     header {
-        Access-Control-Allow-Origin "https://uniride-proyecto-final-framewors-yk.vercel.app"
+        Access-Control-Allow-Origin "*"
         Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
         Access-Control-Allow-Headers "Content-Type, Authorization, Accept, X-Requested-With"
         Access-Control-Allow-Credentials "false"
