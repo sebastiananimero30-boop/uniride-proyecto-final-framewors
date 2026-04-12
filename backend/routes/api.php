@@ -1,0 +1,57 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\TripController;
+use App\Http\Controllers\Api\VehicleController;
+use App\Http\Controllers\Api\TripPassengerController;
+use App\Http\Controllers\Api\RatingController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReportController;
+
+// Rutas públicas
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login',    [AuthController::class, 'login']);
+});
+
+// Rutas protegidas
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/me',      [AuthController::class, 'me']);
+
+    // Vehículos y viajes (solo conductores)
+    Route::middleware('role:conductor')->group(function () {
+        Route::post('/vehicles',           [VehicleController::class, 'store']);
+        Route::get('/vehicles/my',         [VehicleController::class, 'show']);
+        Route::post('/trips',              [TripController::class, 'store']);
+        Route::get('/trips/my',            [TripController::class, 'myTrips']);
+        Route::patch('/trips/{id}/status', [TripController::class, 'updateStatus']);
+    });
+
+    // Viajes (todos los autenticados)
+    Route::get('/trips/search', [TripPassengerController::class, 'search']);
+    Route::get('/trips',        [TripController::class, 'index']);
+    Route::get('/trips/{id}',   [TripController::class, 'show']);
+
+    // Pasajeros (solo pasajeros)
+    Route::middleware('role:pasajero')->group(function () {
+        Route::post('/trips/{id}/join',   [TripPassengerController::class, 'join']);
+        Route::delete('/trips/{id}/leave',[TripPassengerController::class, 'leave']);
+        Route::get('/passenger/my-trips', [TripPassengerController::class, 'myTrips']);
+    });
+
+    // Calificaciones (todos los autenticados)
+    Route::post('/trips/{id}/rate',     [RatingController::class, 'store']);
+    Route::get('/users/{id}/ratings',   [RatingController::class, 'userRatings']);
+
+    // Notificaciones
+    Route::get('/notifications',             [NotificationController::class, 'index']);
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::patch('/notifications/read-all',  [NotificationController::class, 'markAllAsRead']);
+
+    // Reporte
+    Route::get('/report/dashboard', [ReportController::class, 'dashboard']);
+});
