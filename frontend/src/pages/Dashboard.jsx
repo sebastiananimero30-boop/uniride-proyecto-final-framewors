@@ -262,7 +262,7 @@ const nextStatus = {
 }
 
 export default function Dashboard({ user, onLogout }) {
-  const [activeRole, setActiveRole] = useState(user.role === 'passenger' ? 'passenger' : 'driver')
+  const [activeRole, setActiveRole] = useState(['passenger','pasajero'].includes(user.role) ? 'passenger' : ['conductor','driver','both'].includes(user.role) ? 'driver' : 'driver')
   const [activeNav,  setActiveNav]  = useState('home')
 
   const [driverTrips,    setDriverTrips]    = useState([])
@@ -855,14 +855,14 @@ export default function Dashboard({ user, onLogout }) {
                   <div>
                     <p className="text-base font-semibold text-slate-800">{user.name}</p>
                     <p className="text-sm text-slate-400">{user.email}</p>
-                    <p className="text-xs text-slate-400 mt-0.5 capitalize">{user.role === 'both' ? 'Conductor & Pasajero' : user.role}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 capitalize">{user.role === 'both' ? 'Conductor & Pasajero' : user.role === 'pasajero' ? 'Pasajero' : user.role === 'conductor' ? 'Conductor' : user.role}</p>
                   </div>
                 </div>
                 <div className="space-y-0">
                   {[
                     ['Nombre',       user.name],
                     ['Correo',       user.email],
-                    ['Rol',          user.role === 'both' ? 'Conductor & Pasajero' : user.role],
+                    ['Rol',          user.role === 'both' ? 'Conductor & Pasajero' : user.role === 'pasajero' ? 'Pasajero' : user.role === 'conductor' ? 'Conductor' : user.role],
                     ['Calificación', user.rating_avg ? `${user.rating_avg} ★` : 'Sin calificaciones'],
                     ['Universidad',  user.university || '—'],
                     ['Teléfono',     user.phone || '—'],
