@@ -13,6 +13,16 @@ const PassengerRouteMap = lazy(() => import('../components/map/PassengerRouteMap
 
 const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true'
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 768 : false)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
+
 function fmtDate(dt) {
   if (!dt) return '—'
   return new Date(dt).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
@@ -277,6 +287,7 @@ export default function Dashboard({ user, onLogout }) {
   const [publishStep, setPublishStep] = useState('map')
   const [filterDay,   setFilterDay]   = useState('Todos')
   const [toast,       setToast]       = useState(null)
+  const isMobile = useIsMobile()
 
   const showToast = (msg, type = 'success') => setToast({ msg, type })
 
@@ -411,7 +422,7 @@ export default function Dashboard({ user, onLogout }) {
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Sidebar — oculto en móvil */}
-      <aside className="hidden md:flex w-56 bg-white border-r border-slate-100 flex-col flex-shrink-0">
+      <aside className="w-56 bg-white border-r border-slate-100 flex-col flex-shrink-0" style={{display: isMobile ? "none" : "flex"}}>
         <div className="px-5 py-5 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-[#1a3a5c] rounded-lg flex items-center justify-center flex-shrink-0">
