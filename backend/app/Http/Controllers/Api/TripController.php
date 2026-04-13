@@ -106,14 +106,33 @@ class TripController extends Controller
 
         $trip->update(['status' => $request->status]);
 
-        // Notificar a los pasajeros si el viaje se cancela
-        if ($request->status === 'cancelado') {
+        // Notificar a los pasajeros cada vez que el conductor cambia el estado del viaje
+        $statusNotifications = [
+            'confirmado' => [
+                'type' => 'viaje_confirmado',
+                'message' => "Tu viaje de {$trip->origin} a {$trip->destination} fue confirmado por el conductor.",
+            ],
+            'en_curso' => [
+                'type' => 'viaje_en_curso',
+                'message' => "Tu viaje de {$trip->origin} a {$trip->destination} ya está en curso.",
+            ],
+            'completado' => [
+                'type' => 'viaje_completado',
+                'message' => "Tu viaje de {$trip->origin} a {$trip->destination} fue marcado como completado.",
+            ],
+            'cancelado' => [
+                'type' => 'viaje_cancelado',
+                'message' => "El viaje de {$trip->origin} a {$trip->destination} fue cancelado por el conductor.",
+            ],
+        ];
+
+        if (isset($statusNotifications[$request->status])) {
             foreach ($trip->passengers as $passenger) {
                 Notification::create([
                     'user_id' => $passenger->id,
-                    'type'    => 'viaje_cancelado',
-                    'message' => "El viaje de {$trip->origin} a {$trip->destination} fue cancelado por el conductor.",
-                    'data'    => ['trip_id' => $trip->id],
+                    'type'    => $statusNotifications[$request->status]['type'],
+                    'message' => $statusNotifications[$request->status]['message'],
+                    'data'    => ['trip_id' => $trip->id, 'status' => $request->status],
                 ]);
             }
         }
