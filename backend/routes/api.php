@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\TripController;
 use App\Http\Controllers\Api\VehicleController;
@@ -23,29 +21,6 @@ Route::options('{any}', function() {
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
-});
-
-Route::get('/route-proxy', function (Request $request) {
-    $request->validate([
-        'coordinates' => ['required', 'string', 'regex:/^-?\d+(\.\d+)?,-?\d+(\.\d+)?(?:;-?\d+(\.\d+)?,-?\d+(\.\d+)?)+$/'],
-    ]);
-
-    $response = Http::timeout(10)->acceptJson()->get(
-        'https://router.project-osrm.org/route/v1/driving/' . $request->query('coordinates'),
-        [
-            'overview' => 'full',
-            'geometries' => 'geojson',
-        ]
-    );
-
-    if ($response->failed()) {
-        return response()->json([
-            'message' => 'No fue posible obtener la ruta.',
-        ], 502);
-    }
-
-    return response($response->body(), 200)
-        ->header('Content-Type', 'application/json');
 });
 
 // Rutas protegidas

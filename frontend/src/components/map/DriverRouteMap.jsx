@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
 const NOMINATIM = 'https://nominatim.openstreetmap.org'
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-const USE_BACKEND = import.meta.env.VITE_USE_BACKEND === 'true'
 
 async function reverseGeocode(lat, lng) {
   try {
@@ -21,25 +19,15 @@ async function fetchRoute(waypoints) {
   if (waypoints.length < 2) return null
   const coords = waypoints.map((w) => `${w.lng},${w.lat}`).join(';')
   try {
-    const routeUrl = USE_BACKEND
-      ? `${API_BASE_URL}/route-proxy?coordinates=${encodeURIComponent(coords)}`
-      : `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`
-    const res = await fetch(routeUrl)
+    const res = await fetch(
+      `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`
+    )
     const data = await res.json()
     if (data.routes?.[0]) {
-      const route = data.routes[0]
-      return {
-        coordinates: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
-        distanceKm: (route.distance / 1000).toFixed(1),
-        durationMin: Math.round(route.duration / 60),
-      }
+      return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng])
     }
   } catch {}
-  return {
-    coordinates: waypoints.map((w) => [w.lat, w.lng]),
-    distanceKm: null,
-    durationMin: null,
-  }
+  return waypoints.map((w) => [w.lat, w.lng])
 }
 
 const POINT_TYPES = [
@@ -167,10 +155,10 @@ export default function DriverRouteMap({ onRouteReady }) {
 
     if (waypoints.length >= 2) {
       setLoading(true)
-      const routeData = await fetchRoute(waypoints)
+      const routeCoords = await fetchRoute(waypoints)
       setLoading(false)
-      if (routeData?.coordinates && leafletMap.current) {
-        routeLineRef.current = L.polyline(routeData.coordinates, {
+      if (routeCoords && leafletMap.current) {
+        routeLineRef.current = L.polyline(routeCoords, {
           color: '#1a3a5c',
           weight: 5,
           opacity: 0.85,
@@ -178,19 +166,15 @@ export default function DriverRouteMap({ onRouteReady }) {
         }).addTo(leafletMap.current)
       }
 
-      if (routeData?.distanceKm && routeData?.durationMin !== null) {
-        setRouteInfo({ distance: routeData.distanceKm, duration: routeData.durationMin })
-      } else {
-        let totalDist = 0
-        for (let i = 0; i < waypoints.length - 1; i++) {
-          const a = L.latLng(waypoints[i].lat, waypoints[i].lng)
-          const b = L.latLng(waypoints[i + 1].lat, waypoints[i + 1].lng)
-          totalDist += a.distanceTo(b)
-        }
-        const distKm  = (totalDist / 1000).toFixed(1)
-        const minutes = Math.round((totalDist / 1000 / 35) * 60)
-        setRouteInfo({ distance: distKm, duration: minutes })
+      let totalDist = 0
+      for (let i = 0; i < waypoints.length - 1; i++) {
+        const a = L.latLng(waypoints[i].lat, waypoints[i].lng)
+        const b = L.latLng(waypoints[i + 1].lat, waypoints[i + 1].lng)
+        totalDist += a.distanceTo(b)
       }
+      const distKm  = (totalDist / 1000).toFixed(1)
+      const minutes = Math.round((totalDist / 1000 / 35) * 60)
+      setRouteInfo({ distance: distKm, duration: minutes })
     } else {
       setRouteInfo(null)
     }
