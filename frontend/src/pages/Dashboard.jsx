@@ -311,7 +311,7 @@ export default function Dashboard({ user, onLogout }) {
     setDataLoading(false)
   }, [activeRole])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData(); const interval = setInterval(loadData, 30000); return () => clearInterval(interval) }, [loadData])
 
   async function loadRatings() {
     if (!USE_BACKEND) return
