@@ -720,19 +720,25 @@ export default function Dashboard({ user, onLogout }) {
                       <div className="space-y-2.5">
                         {activePassenger.map((tp) => {
                           const t = tp.trip || tp
-                          const tripCancelled = t.status === 'cancelado'
-                          const s = tripCancelled
-                            ? { label: 'Viaje cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' }
-                            : tp.status === 'cancelado'
+                          const tripStatus = t.status || tp.status || 'confirmado'
+                          const passengerCancelled = tp.status === 'cancelado'
+                          const s = passengerCancelled
                             ? { label: 'Cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' }
+                            : tripStatus === 'cancelado'
+                            ? { label: 'Viaje cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' }
+                            : tripStatus === 'en_curso'
+                            ? { label: 'En curso', classes: 'bg-amber-50 text-amber-700 border border-amber-200' }
+                            : tripStatus === 'completado'
+                            ? { label: 'Completado', classes: 'bg-slate-100 text-slate-500 border border-slate-200' }
                             : { label: 'Confirmado', classes: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+                          const canCancel = !passengerCancelled && !['cancelado','en_curso','completado'].includes(tripStatus)
                           return (
                             <div key={tp.id} className="border border-slate-100 rounded-lg p-3">
                               <p className="text-xs font-medium text-slate-800 mb-1">{t.origin} → {t.destination}</p>
                               <p className="text-[11px] text-slate-400 mb-2">{fmtDate(t.departure_time)} · {t.driver?.name || '—'}</p>
                               <div className="flex items-center justify-between">
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${s.classes}`}>{s.label}</span>
-                                {!tripCancelled && tp.status !== 'cancelado' && (
+                                {canCancel && (
                                   <button onClick={() => handleLeaveTrip(t.id)} className="text-[10px] text-red-400 hover:text-red-600 hover:underline">Cancelar</button>
                                 )}
                               </div>
@@ -782,7 +788,11 @@ export default function Dashboard({ user, onLogout }) {
                 <div className="space-y-3">
                   {passengerTrips.map((tp) => {
                     const t = tp.trip || tp
-                    const s = STATUS_MAP[tp.status] || STATUS_MAP.confirmado
+                    const tripStatus = t.status || tp.status || 'confirmado'
+                    const passengerCancelled = tp.status === 'cancelado'
+                    const displayStatus = passengerCancelled ? 'cancelado' : tripStatus
+                    const s = STATUS_MAP[displayStatus] || STATUS_MAP.confirmado
+                    const canCancel = !passengerCancelled && !['cancelado','en_curso','completado'].includes(tripStatus)
                     return (
                       <div key={tp.id} className="bg-white border border-slate-100 rounded-xl p-4">
                         <div className="flex items-start justify-between mb-2">
@@ -792,7 +802,7 @@ export default function Dashboard({ user, onLogout }) {
                           </div>
                           <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ml-2 flex-shrink-0 ${s.classes}`}>{s.label}</span>
                         </div>
-                        {tp.status === 'confirmado' && (
+                        {canCancel && (
                           <button onClick={() => handleLeaveTrip(t.id)}
                             className="mt-2 text-xs border border-red-200 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-50">
                             Cancelar reserva
@@ -815,7 +825,10 @@ export default function Dashboard({ user, onLogout }) {
               {(() => {
                 const trips = activeRole === 'driver'
                   ? driverTrips.filter(t => ['completado','cancelado'].includes(t.status))
-                  : passengerTrips.filter(t => t.status !== 'confirmado')
+                  : passengerTrips.filter(t => {
+                      const tripStatus = (t.trip || t).status || t.status
+                      return ['completado','cancelado','en_curso'].includes(tripStatus) || t.status === 'cancelado'
+                    })
                 if (trips.length === 0) return (
                   <div className="bg-white border border-slate-100 rounded-xl p-12 text-center">
                     <p className="text-slate-400 text-sm">Sin historial aún</p>
@@ -825,7 +838,9 @@ export default function Dashboard({ user, onLogout }) {
                   <div className="space-y-3">
                     {trips.map((t) => {
                       const trip = t.trip || t
-                      const s = STATUS_MAP[t.status] || STATUS_MAP.completado
+                      const tripStatus = trip.status || t.status || 'completado'
+                      const displayStatus = activeRole === 'passenger' && t.status === 'cancelado' ? 'cancelado' : tripStatus
+                      const s = STATUS_MAP[displayStatus] || STATUS_MAP.completado
                       return (
                         <div key={t.id} className="bg-white border border-slate-100 rounded-xl p-4">
                           <div className="flex items-start justify-between">
