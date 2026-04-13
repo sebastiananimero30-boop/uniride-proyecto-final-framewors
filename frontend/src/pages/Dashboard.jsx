@@ -46,6 +46,7 @@ const STATUS_MAP = {
   en_curso:   { label: 'En curso',   classes: 'bg-amber-50 text-amber-700 border border-amber-200'       },
   completado: { label: 'Completado', classes: 'bg-slate-100 text-slate-500 border border-slate-200'      },
   cancelado:  { label: 'Cancelado',  classes: 'bg-red-50 text-red-500 border border-red-200'             },
+  viaje_cancelado: { label: 'Viaje cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' },
   available:  { label: 'Disponible', classes: 'bg-blue-50 text-blue-700 border border-blue-200'          },
 }
 
@@ -386,7 +387,7 @@ export default function Dashboard({ user, onLogout }) {
   const completedDriver    = driverTrips.filter(t => t.status === 'completado').length
   const activeDriverTrips  = driverTrips.filter(t => !['completado','cancelado'].includes(t.status))
   const completedPassenger = passengerTrips.filter(t => t.status === 'confirmado').length
-  const activePassenger    = passengerTrips.filter(t => t.status === 'confirmado')
+  const activePassenger    = passengerTrips
   const unreadNotifs       = notifications.filter(n => !n.read_at).length
 
   const topbarTitle =
@@ -719,13 +720,21 @@ export default function Dashboard({ user, onLogout }) {
                       <div className="space-y-2.5">
                         {activePassenger.map((tp) => {
                           const t = tp.trip || tp
+                          const tripCancelled = t.status === 'cancelado'
+                          const s = tripCancelled
+                            ? { label: 'Viaje cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' }
+                            : tp.status === 'cancelado'
+                            ? { label: 'Cancelado', classes: 'bg-red-50 text-red-500 border border-red-200' }
+                            : { label: 'Confirmado', classes: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
                           return (
                             <div key={tp.id} className="border border-slate-100 rounded-lg p-3">
                               <p className="text-xs font-medium text-slate-800 mb-1">{t.origin} → {t.destination}</p>
                               <p className="text-[11px] text-slate-400 mb-2">{fmtDate(t.departure_time)} · {t.driver?.name || '—'}</p>
                               <div className="flex items-center justify-between">
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">Confirmado</span>
-                                <button onClick={() => handleLeaveTrip(t.id)} className="text-[10px] text-red-400 hover:text-red-600 hover:underline">Cancelar</button>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${s.classes}`}>{s.label}</span>
+                                {!tripCancelled && tp.status !== 'cancelado' && (
+                                  <button onClick={() => handleLeaveTrip(t.id)} className="text-[10px] text-red-400 hover:text-red-600 hover:underline">Cancelar</button>
+                                )}
                               </div>
                             </div>
                           )
